@@ -1,91 +1,167 @@
-let web3;
-        let toDoListContract;
-        let accounts;
+var ContractABI=[
+	{
+		"inputs": [],
+		"stateMutability": "nonpayable",
+		"type": "constructor"
+	},
+	{
+		"inputs": [],
+		"name": "deposite",
+		"outputs": [
+			{
+				"internalType": "bool",
+				"name": "",
+				"type": "bool"
+			}
+		],
+		"stateMutability": "payable",
+		"type": "function"
+	},
+	{
+		"inputs": [],
+		"name": "getbalance",
+		"outputs": [
+			{
+				"internalType": "uint256",
+				"name": "",
+				"type": "uint256"
+			}
+		],
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"inputs": [],
+		"name": "getcontractbalance",
+		"outputs": [
+			{
+				"internalType": "uint256",
+				"name": "",
+				"type": "uint256"
+			}
+		],
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"inputs": [],
+		"name": "owner",
+		"outputs": [
+			{
+				"internalType": "address",
+				"name": "",
+				"type": "address"
+			}
+		],
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"inputs": [
+			{
+				"internalType": "uint256",
+				"name": "_amount",
+				"type": "uint256"
+			}
+		],
+		"name": "withdraw",
+		"outputs": [
+			{
+				"internalType": "bool",
+				"name": "",
+				"type": "bool"
+			}
+		],
+		"stateMutability": "payable",
+		"type": "function"
+	},
+	{
+		"inputs": [
+			{
+				"internalType": "uint256",
+				"name": "_amount",
+				"type": "uint256"
+			}
+		],
+		"name": "withdrawfunds",
+		"outputs": [
+			{
+				"internalType": "bool",
+				"name": "",
+				"type": "bool"
+			}
+		],
+		"stateMutability": "payable",
+		"type": "function"
+	}
+];
 
-        async function init() {
-            // Connect to the injected Ethereum provider (MetaMask)
-            if (window.ethereum) {
-                web3 = new Web3(window.ethereum);
-                try {
-                    // Request account access if needed
-                    await window.ethereum.enable();
-                } catch (error) {
-                    console.error("User denied account access");
-                }
-            } else {
-                console.error("No Ethereum provider detected");
-                return;
-            }
+var ContractAddress='0xb20dF42Bbec6163F31c74103EaF79065c68eF3EA';
 
-            // Load the ToDoList contract
-            const contractAddress = "0x2a589c962DD041B87D2D87A5D4C019319BBb65b8"; // Replace with the actual contract address
-            toDoListContract = new web3.eth.Contract(ToDoListABI, contractAddress);
+var loginbutton = document.getElementById('connect_to_metamask')
+var useraddress = document.getElementById('accountaddress')
+var depositeinput = document.getElementById('depositeeth')
+var depositebutton = document.getElementById('depositebutton')
+var withdrawinput = document.getElementById('withdraweth')
+var withdrawbutton = document.getElementById( 'withdrawbutton')
+var getbalancebutton = document.getElementById('getbalance')
+var balance = document.getElementById('balance')
+var address, web3, myContract
 
-            // Fetch accounts
-            accounts = await web3.eth.getAccounts();
+document.addEventListener('DOMContentLoaded', async()=>
+{
+    if(typeof window.ethereum != 'undefined')
+    {
+        console.log('Metamask is installed')
 
-            // Initial UI update
-            updateTaskList();
+         web3 = new Web3(window.ethereum);
+        console.log("web3 is loaded",web3);
 
-            // Call updateTaskList periodically to keep the UI in sync with the contract state
-            setInterval(updateTaskList, 4000);
-        }
+         myContract=new web3.eth.Contract(ContractABI,ContractAddress);
+        console.log("contract is loaded",myContract);
 
-        async function addTask() {
-            const taskInput = document.getElementById('taskInput');
-            const taskContent = taskInput.value;
-            if (!taskContent) {
-                alert("Task content cannot be empty");
-                return;
-            }
+		loginbutton.addEventListener('click',async()=>{
+			var accounts =await ethereum.request({method: 'eth_requestAccounts'});
+			address = accounts[0];
+			useraddress.innerText =address;
 
-            try {
-                await toDoListContract.methods.addTask(taskContent).send({ from: accounts[0] });
-            } catch (error) {
-                console.error("Error adding task:", error.message);
-                alert("Error adding task. Check the console for details.");
-            }
-
-            taskInput.value = ''; // Clear the input field after adding the task
-        }
-
-        async function completeTask(taskId) {
-            try {
-                await toDoListContract.methods.completeTask(taskId).send({ from: accounts[0] });
-            } catch (error) {
-                console.error("Error completing task:", error.message);
-                alert("Error completing task. Check the console for details.");
-            }
-        }
-
-        async function deleteTask(taskId) {
-            try {
-                await toDoListContract.methods.deleteTask(taskId).send({ from: accounts[0] });
-            } catch (error) {
-                console.error("Error deleting task:", error.message);
-                alert("Error deleting task. Check the console for details.");
-            }
-        }
-
-        async function updateTaskList() {
-            const taskListElement = document.getElementById('taskList');
-            taskListElement.innerHTML = ''; // Clear the existing list
-
-            const taskCount = await toDoListContract.methods.taskCount().call();
-
-            for (let i = 1; i <= taskCount; i++) {
-                const task = await toDoListContract.methods.tasks(i).call();
-                const taskItem = document.createElement('li');
-
-                taskItem.innerHTML = `
-                    <span>${task.content}</span>
-                    <button onclick="completeTask(${i})" ${task.completed ? 'disabled' : ''}>Complete</button>
-                    <button onclick="deleteTask(${i})">Delete</button>
-                `;
-
-                taskListElement.appendChild(taskItem);
-            }
-        }
-
-        // Run the initialization function
-        init();
+			useraddress.classList.remove('d-none');
+			loginbutton.classList.add('d-none');
+			console.log(accounts);
+			console.log(accounts[0]);
+		});
+		ethereum.on('accountsChanged',async function(accounts){
+            var accounts =await ethereum.request({method:'eth_requestAccounts'});
+			address =accounts[0];
+			useraddress.innerText = address;
+		}); 
+		depositebutton.addEventListener('click', () => {
+			const amountInWei = web3.utils.toWei(depositeinput.value, 'ether');
+			//console.log(depositeinput.value);
+			myContract.methods.deposite().send({from :address, value: amountInWei}, function (err, res) {
+			console.log(res);
+			})
+			});
+		withdrawbutton.addEventListener('click', () => {
+			const amountInWei = web3.utils.toWei(withdrawinput.value, 'ether');
+			myContract.methods.withdraw(amountInWei).send({from: address}, function (err, res) {
+			console.log(res);
+			})
+			});
+		getbalancebutton.addEventListener('click',()=>{
+				myContract.methods.getbalance().call({from: address}, function (err, res) {
+					if (!err) {
+						const balanceInWei = res;
+						const balanceInEther = web3.utils.fromWei(balanceInWei, 'ether');
+						balance.innerText = balanceInEther;
+					} else {
+						console.error(err);
+					}
+			})
+	    });
+		
+    }
+    else{
+        alert('please install metamask')
+    }
+})
